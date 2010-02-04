@@ -1,0 +1,16 @@
+= pyexist =
+
+pyexist is a simple Python wrapper around the eXist-db REST API.
+
+For documentation please refer to
+
+  [http://wiki.github.com/knipknap/pyexist/]
+
+= Installation =
+
+    sudo python setup.py install --prefix /usr/local
+
+= Dependencies =
+
+* Python 2.5 or greater
+* Exist DB [http://www.exist-db.org/]

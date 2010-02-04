@@ -1,0 +1,2 @@
+version=3
+http://github.com/knipknap/pyexist/downloads /knipknap/pyexist/tarball/v(.+)

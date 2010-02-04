@@ -1,0 +1,114 @@
+#!/usr/bin/env python
+# Copyright (C) 2010 Samuel Abels.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2, as
+# published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+import sys, os
+sys.path.insert(0, 'src')
+from optparse import OptionParser
+from lxml     import etree
+from pyexist  import __version__, ExistDB
+
+usage  = '''
+%prog [options] HOST/COLLECTION import    DOCUMENT FILE
+%prog [options] HOST/COLLECTION remove    DOCUMENT
+%prog [options] HOST/COLLECTION query     QUERY
+%prog [options] HOST/COLLECTION queryfile FILE
+
+DATABASE is a hostname and port number, and COLLECTION is the database name
+
+Example: %prog localhost:8088/db import mydoc myfile.xml
+'''.rstrip()
+parser = OptionParser(usage = usage, version = __version__)
+
+if __name__ == '__main__':
+    # Parse options.
+    options, args = parser.parse_args(sys.argv)
+    args.pop(0)
+
+    try:
+        hostcoll = args[0]
+    except IndexError:
+        parser.error('required arguments "host" and "collection" missing')
+    try:
+        host, collection = hostcoll.split('/')
+    except IndexError:
+        parser.error('invalid argument for "host"/"collection"')
+
+    try:
+        action = args[1]
+    except IndexError:
+        parser.error('no action specified')
+
+    # Import a file into a new or existing document.
+    db = ExistDB(host, collection)
+    if action == 'import':
+        try:
+            document = args[2]
+            filename = args[3]
+        except IndexError:
+            parser.error('please specify a document and a filename')
+        if not os.path.isfile(filename):
+            parser.error('not a valid file: %s' % filename)
+        print "Importing %s as %s..." % (filename, document),
+        try:
+            db.store_file(filename, document)
+        except ExistDB.Error, e:
+            print e
+        else:
+            print "done."
+
+    # Removes an existing document.
+    elif action == 'remove':
+        try:
+            document = args[2]
+        except IndexError:
+            parser.error('a document name is required')
+        print "Deleting %s..." % document,
+        try:
+            db.delete(document)
+        except ExistDB.Error, e:
+            print e
+        else:
+            print "done."
+
+    # Executes the given xquery.
+    elif action == 'query':
+        try:
+            thequery = args[2]
+        except IndexError:
+            parser.error('a query is required')
+        try:
+            tree = db.query(thequery)[:]
+        except ExistDB.Error, e:
+            print 'ExistDB.Error:', e
+        else:
+            print etree.tounicode(tree)
+
+    # Executes the extended xquery that is contained in the given file.
+    elif action == 'queryfile':
+        try:
+            filename = args[2]
+        except IndexError:
+            parser.error('please specify a filename')
+        if not os.path.isfile(filename):
+            parser.error('not a valid file: %s' % filename)
+        try:
+            tree = db.query_from_file(filename)[:]
+        except ExistDB.Error, e:
+            print 'ExistDB.Error:', e
+        else:
+            print etree.tounicode(tree)
+
+    else:
+        parser.error('invalid action %s' % repr(action))

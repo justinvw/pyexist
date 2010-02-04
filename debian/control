@@ -1,0 +1,15 @@
+Source: pyexist
+Section: contrib/text
+Priority: optional
+Maintainer: Samuel Abels <knipknap@gmail.com>
+Build-Depends: debhelper (>= 7), python, python-central (>= 0.6.0), cdbs (>= 0.4.49)
+XS-Python-Version: >= 2.6
+Standards-Version: 3.8.3
+Homepage: http://wiki.github.com/knipknap/pyexist/
+
+Package: pyexist
+Architecture: all
+Depends: ${python:Depends}, python-lxml, ${misc:Depends}
+XB-Python-Version: ${python:Versions}
+Description: A simple wrapper around eXist-db
+ pyexist is a simple Python wrapper around the eXist-db REST API.
