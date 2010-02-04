@@ -15,7 +15,7 @@
 from lxml import etree
 
 def _escape(arg):
-    return str(arg).replace(r"'", r"\'")
+    return str(arg).replace(r"'", r"''")
 
 def _replacetags(string, **kwargs):
     for key, value in kwargs.iteritems():
