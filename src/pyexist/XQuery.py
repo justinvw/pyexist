@@ -89,7 +89,7 @@ class XQuery(object):
         if self.len is None:
             # Execute the query with minimal results to see the count.
             tree     = self[0]
-            self.len = int(tree.get('{' + db.RESULT_NS + '}hits'))
+            self.len = int(tree.get('{' + self.db.RESULT_NS + '}hits'))
         return self.len
 
     def __getitem__(self, key):
