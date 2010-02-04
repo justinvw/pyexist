@@ -88,7 +88,7 @@ class XQuery(object):
         """
         if self.len is None:
             # Execute the query with minimal results to see the count.
-            tree     = self[0]
+            tree     = self[0:0]
             self.len = int(tree.get('{' + self.db.RESULT_NS + '}hits'))
         return self.len
 
@@ -106,8 +106,8 @@ class XQuery(object):
         elif isinstance(key, slice):
             # Try not to use key.indices(self.count()), as that would require
             # an extra query for counting the items.
-            start = key.start or 0
-            step  = key.step  or 1
+            start = key.start is not None and key.start or 0
+            step  = key.step or 1
             if step != 1:
                 raise TypeError('slice step %d is not supported' % step)
             if key.stop is None:
@@ -129,4 +129,6 @@ class XQuery(object):
             except AttributeError:
                 error = etree.tounicode(tree)
             raise self.db.Error('server said: ' + error)
+
+        self.len = int(tree.get('{' + self.db.RESULT_NS + '}hits'))
         return tree
