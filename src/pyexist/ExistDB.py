@@ -46,7 +46,7 @@ class ExistDB(object):
         self.host       = host
         self.collection = collection
         self.conn       = httplib.HTTP(host)
-        self.path       = '/exist/rest/%s' % collection
+        self.path       = collection
 
     def store(self, doc, xml):
         """
