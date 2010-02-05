@@ -41,7 +41,7 @@ if __name__ == '__main__':
     except IndexError:
         parser.error('required arguments "host" and "collection" missing')
     try:
-        host, collection = hostcoll.split('/')
+        host, collection = hostcoll.split('/', 1)
     except IndexError:
         parser.error('invalid argument for "host"/"collection"')
 
