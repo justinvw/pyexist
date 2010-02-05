@@ -27,7 +27,9 @@ usage  = '''
 
 DATABASE is a hostname and port number, and COLLECTION is the database name
 
-Example: %prog localhost:8088/db import mydoc myfile.xml
+Examples:
+ %prog localhost:8088/db import mydoc myfile.xml
+ %prog user:password@localhost:8088/system/config import my.xconf myfile.xml
 '''.rstrip()
 parser = OptionParser(usage = usage, version = __version__)
 

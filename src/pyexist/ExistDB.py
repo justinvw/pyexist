@@ -12,7 +12,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-import os, httplib, urllib
+import os, httplib, urlparse, base64
 from XQuery import XQuery
 
 _query_tmpl = '''
@@ -34,19 +34,37 @@ class ExistDB(object):
     class Error(Exception):
         pass
 
-    def __init__(self, host, collection):
+    def __init__(self, host_uri, collection):
         """
         Create a new database connection using the REST protocol.
 
-        @type  host: string
-        @param host: The host and port number, separated by a ':' character.
+        @type  host_uri: string
+        @param host_uri: The host and port number, separated by a ':' character.
         @type  collection: string
         @param collection: A database (collection) name.
         """
-        self.host       = host
+        # Python's urlparse module is so bad it hurts.
+        uri = urlparse.urlparse('http://' + host_uri)
+        try:
+            auth, netloc = uri.netloc.split('@', 1)
+        except ValueError:
+            auth   = ''
+            netloc = uri.netloc
+        self.username   = auth.split(':', 1)[0]
+        self.password   = auth[len(self.username) + 1:]
         self.collection = collection
-        self.conn       = httplib.HTTP(host)
+        self.conn       = httplib.HTTP(netloc)
         self.path       = collection
+
+    def _authenticate(self):
+        if not self.username:
+            return
+        if self.password:
+            auth = self.username + ':' + self.password
+        else:
+            auth = self.username
+        auth = base64.encodestring(auth).strip()
+        self.conn.putheader('Authorization', 'Basic ' + auth)
 
     def store(self, doc, xml):
         """
@@ -58,6 +76,7 @@ class ExistDB(object):
         @param xml: The XML to import.
         """
         self.conn.putrequest('PUT', self.path + '/' + doc)
+        self._authenticate()
         self.conn.putheader('Content-Type',   'text/xml')
         self.conn.putheader('Content-Length', str(len(xml)))
         self.conn.endheaders()
@@ -92,6 +111,7 @@ class ExistDB(object):
         @param doc: A document name.
         """
         self.conn.putrequest('DELETE', self.path + '/' + doc)
+        self._authenticate()
         self.conn.endheaders()
 
         errcode, errmsg, headers = self.conn.getreply()
@@ -106,6 +126,7 @@ class ExistDB(object):
             args += ' max="%d"' % max
         thequery = _query_tmpl % (args, thequery)
         self.conn.putrequest('POST', self.path)
+        self._authenticate()
         self.conn.putheader('Content-Type',   'text/xml')
         self.conn.putheader('Content-Length', str(len(thequery)))
         self.conn.endheaders()
