@@ -81,7 +81,7 @@ class ExistDB(object):
         if doc is None:
             doc = os.path.splitext(os.path.basename(filename))[0]
         xml = open(filename).read()
-        self.store(xml, doc)
+        self.store(doc, xml)
 
     def delete(self, doc):
         """
@@ -91,7 +91,7 @@ class ExistDB(object):
         @type  doc: string
         @param doc: A document name.
         """
-        self.conn.putrequest('DELETE', self.path + '/' + document)
+        self.conn.putrequest('DELETE', self.path + '/' + doc)
         self.conn.endheaders()
 
         errcode, errmsg, headers = self.conn.getreply()
