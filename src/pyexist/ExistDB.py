@@ -122,7 +122,9 @@ class ExistDB(object):
         args = ''
         if start is not None:
             args += ' start="%d"' % start
-        if max is not None:
+        if max is None:
+            args += ' max="-1"'
+        else:
             args += ' max="%d"' % max
         thequery = _query_tmpl % (args, thequery)
         self.conn.putrequest('POST', self.path)
