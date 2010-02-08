@@ -88,7 +88,7 @@ class XQuery(object):
         """
         if self.len is None:
             # Execute the query with minimal results to see the count.
-            tree     = self[0:0]
+            tree     = self[0:1]
             self.len = int(tree.get('{' + self.db.RESULT_NS + '}hits'))
         return self.len
 
