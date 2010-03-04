@@ -12,7 +12,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-import os, httplib, urlparse, base64
+from __future__ import with_statement
+import os, httplib, urlparse, base64, threading
 from XQuery import XQuery
 
 _query_tmpl = '''
@@ -53,6 +54,7 @@ class ExistDB(object):
         self.username   = auth.split(':', 1)[0]
         self.password   = auth[len(self.username) + 1:]
         self.collection = collection
+        self.lock       = threading.Lock()
         self.conn       = httplib.HTTP(netloc)
         self.path       = collection
 
@@ -75,16 +77,18 @@ class ExistDB(object):
         @type  xml: string
         @param xml: The XML to import.
         """
-        self.conn.putrequest('PUT', self.path + '/' + doc)
-        self._authenticate()
-        self.conn.putheader('Content-Type',   'text/xml')
-        self.conn.putheader('Content-Length', str(len(xml)))
-        self.conn.endheaders()
-        self.conn.send(xml)
+        with self.lock:
+            self.conn.putrequest('PUT', self.path + '/' + doc)
+            self._authenticate()
+            self.conn.putheader('Content-Type',   'text/xml')
+            self.conn.putheader('Content-Length', str(len(xml)))
+            self.conn.endheaders()
+            self.conn.send(xml)
 
-        errcode, errmsg, headers = self.conn.getreply()
-        if errcode != 201:
-            raise ExistDB.Error('Error %d: %s' % (errcode, errmsg))
+            errcode, errmsg, headers = self.conn.getreply()
+            if errcode != 201:
+                raise ExistDB.Error('Error %d: %s' % (errcode, errmsg))
+            self.conn.close()
 
     def store_file(self, filename, doc = None):
         """
@@ -110,13 +114,15 @@ class ExistDB(object):
         @type  doc: string
         @param doc: A document name.
         """
-        self.conn.putrequest('DELETE', self.path + '/' + doc)
-        self._authenticate()
-        self.conn.endheaders()
+        with self.lock:
+            self.conn.putrequest('DELETE', self.path + '/' + doc)
+            self._authenticate()
+            self.conn.endheaders()
 
-        errcode, errmsg, headers = self.conn.getreply()
-        if errcode != 200:
-            raise ExistDB.Error('Error %d: %s' % (errcode, errmsg))
+            errcode, errmsg, headers = self.conn.getreply()
+            if errcode != 200:
+                raise ExistDB.Error('Error %d: %s' % (errcode, errmsg))
+            self.conn.close()
 
     def _post(self, thequery, start = 1, max = None):
         args = ''
@@ -127,18 +133,21 @@ class ExistDB(object):
         else:
             args += ' max="%d"' % max
         thequery = _query_tmpl % (args, thequery)
-        self.conn.putrequest('POST', self.path)
-        self._authenticate()
-        self.conn.putheader('Content-Type',   'text/xml')
-        self.conn.putheader('Content-Length', str(len(thequery)))
-        self.conn.endheaders()
-        self.conn.send(thequery)
 
-        errcode, errmsg, headers = self.conn.getreply()
-        if errcode not in (200, 202):
-            raise ExistDB.Error('Error %d: %s' % (errcode, errmsg))
+        with self.lock:
+            self.conn.putrequest('POST', self.path)
+            self._authenticate()
+            self.conn.putheader('Content-Type',   'text/xml')
+            self.conn.putheader('Content-Length', str(len(thequery)))
+            self.conn.endheaders()
+            self.conn.send(thequery)
 
-        response = self.conn.getfile().read()
+            errcode, errmsg, headers = self.conn.getreply()
+            if errcode not in (200, 202):
+                raise ExistDB.Error('Error %d: %s' % (errcode, errmsg))
+
+            response = self.conn.getfile().read()
+            self.conn.close()
         return response
 
     def query(self, thequery, **kwargs):
