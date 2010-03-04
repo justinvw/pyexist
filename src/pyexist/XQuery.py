@@ -13,14 +13,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 from lxml import etree
-
-def _escape(arg):
-    return str(arg).replace(r"'", r"''")
-
-def _replacetags(string, **kwargs):
-    for key, value in kwargs.iteritems():
-        string = string.replace('%{' + key + '}', _escape(value))
-    return string
+from util import replacetags
 
 class XQuery(object):
     """
@@ -43,7 +36,7 @@ class XQuery(object):
         @param kwargs: Parameters to pass into the query.
         """
         self.db    = db
-        self.query = _replacetags(query, **kwargs)
+        self.query = replacetags(query, **kwargs)
         self.len   = None
 
     @staticmethod
