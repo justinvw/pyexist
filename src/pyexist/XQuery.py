@@ -128,7 +128,8 @@ class XQuery(object):
                 error = tree.find('message').text
             except AttributeError:
                 error = etree.tounicode(tree)
-            raise self.db.Error('server said: ' + error)
+            raise self.db.Error('server said: ' + error \
+                              + 'in response to ' + self.query)
 
         self.len = int(tree.get('{' + self.db.RESULT_NS + '}hits'))
         return tree
