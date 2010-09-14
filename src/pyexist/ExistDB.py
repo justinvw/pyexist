@@ -53,7 +53,6 @@ class ExistDB(object):
             netloc = uri.netloc
         self.username   = auth.split(':', 1)[0]
         self.password   = auth[len(self.username) + 1:]
-        self.collection = collection
         self.lock       = threading.Lock()
         self.conn       = httplib.HTTP(netloc)
         self.path       = collection
