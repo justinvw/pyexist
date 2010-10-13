@@ -15,5 +15,7 @@
 """
 The pyexist module.
 """
-from version import __version__
-from ExistDB import ExistDB
+from version       import __version__
+from ExistDB       import ExistDB
+from XQuery        import XQuery
+from XQueryMinidom import XQueryMinidom

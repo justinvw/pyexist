@@ -12,7 +12,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-from lxml import etree
 from util import replacetags
 
 class XQuery(object):
@@ -85,12 +84,14 @@ class XQuery(object):
             self.len = int(tree.get('{' + self.db.RESULT_NS + '}hits'))
         return self.len
 
-    def __getitem__(self, key):
+    def _getitem_post(self, key):
         """
-        Returns the range of matching items.
+        Produces the query to request the given range of items
+        from the server, and returns the response of the server as a
+        string.
 
-        @rtype:  lxml.etree._Element
-        @return: The XML tree that is produced by the query.
+        @rtype:  str
+        @return: The response of the server.
         """
         # Parse the slice argument.
         if isinstance(key, int):
@@ -111,8 +112,19 @@ class XQuery(object):
         else:
             raise TypeError('invalid key argument ' + repr(key))
 
+        return self.db._post(self.query, start = start, max = max)
+
+    def __getitem__(self, key):
+        """
+        Returns the range of matching items.
+
+        @rtype:  lxml.etree._Element
+        @return: The XML tree that is produced by the query.
+        """
+        from lxml import etree
+
         # Execute the query and parse the response.
-        result = self.db._post(self.query, start = start, max = max)
+        result = self._getitem_post(key)
         tree   = etree.fromstring(result)
 
         # Catch errors.
