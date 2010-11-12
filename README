@@ -6,10 +6,6 @@ For documentation please refer to
 
   [http://wiki.github.com/knipknap/pyexist/]
 
-= Installation =
-
-    sudo python setup.py install --prefix /usr/local
-
 = Dependencies =
 
 * Python 2.5 or greater
