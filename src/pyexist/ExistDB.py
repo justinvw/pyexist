@@ -35,7 +35,7 @@ class ExistDB(object):
     class Error(Exception):
         pass
 
-    def __init__(self, host_uri, collection, query_cls = XQuery):
+    def __init__(self, host_uri, collection = '', query_cls = XQuery):
         """
         Create a new database connection using the REST protocol.
 
@@ -51,12 +51,16 @@ class ExistDB(object):
         except ValueError:
             auth   = ''
             netloc = uri.netloc
-        self.username   = auth.split(':', 1)[0]
-        self.password   = auth[len(self.username) + 1:]
-        self.lock       = threading.Lock()
-        self.conn       = httplib.HTTP(netloc)
-        self.path       = collection
-        self.query_cls  = query_cls
+        self.username = auth.split(':', 1)[0]
+        self.password = auth[len(self.username) + 1:]
+        self.lock     = threading.Lock()
+        self.conn     = httplib.HTTP(netloc)
+        self.path     = ''
+        if uri.path:
+            self.path += '/' + uri.path.strip('/')
+        if collection:
+            self.path += '/' + collection.strip('/')
+        self.query_cls = query_cls
 
     def _authenticate(self):
         if not self.username:
