@@ -26,6 +26,24 @@ _query_tmpl = '''
 </query>
 '''
 
+#_update_tmpl = '''
+#<xupdate:modifications version="1.0" xmlns:xupdate="http://www.xmldb.org/xupdate">
+#	%s
+#</xupdate:modifications>
+#'''
+
+_modifications_tmpl = '''
+<modifications version="1.0" xmlns="http://www.xmldb.org/xupdate">
+	%s
+</modifications>
+'''
+_update_tmpl = '''<update select="doc('%s')%s">%s</update>'''
+_remove_tmpl = '''<remove select="doc('%s')%s">%s</remove>'''
+_rename_tmpl = '''<rename select="doc('%s')%s">%s</rename>'''
+_append_tmpl = '''<append select="doc('%s')%s">%s</append>'''
+_insert_before_tmpl = '''<insert-before select="doc('%s')%s">%s</insert-before>'''
+_insert_after_tmpl = '''<insert-after select="doc('%s')%s">%s</insert-after>'''
+
 class ExistDB(object):
     """
     The eXist-db connection object.
@@ -127,6 +145,55 @@ class ExistDB(object):
             if errcode != 200:
                 raise ExistDB.Error('Error %d: %s' % (errcode, errmsg))
             self.conn.close()
+
+    def xupdate(self, doc, modification='update', select='', value=None):
+        """
+        Use the XUpdate (http://xmldb-org.sourceforge.net/xupdate/) methods to
+        apply modifications to documents.
+        
+        @type   doc: string
+        @param  doc: A document name.
+        @type   modification: string
+        @param  modification: The modification you wish to apply (update, remove, rename, append, insert-before, insert-after)
+        @type   select: string
+        @param  select: The XQuery Expression used to select the nodes you wish to modify
+        @type   value: string
+        @param  value: The contents of the modification (can be empty, e.g. in case of a removal)
+        """
+        if modification is 'append':
+            thequery = _modifications_tmpl %(_append_tmpl %('/db' + self.path \
+                + '/' + doc, select, value))
+        elif modification is 'remove':
+            thequery = _modifications_tmpl %(_remove_tmpl %('/db' + self.path \
+                + '/' + doc, select, value))
+        elif modification is 'rename':
+            thequery = _modifications_tmpl %(_rename_tmpl %('/db' + self.path \
+                + '/' + doc, select, value))
+        elif modification is 'insert-before':
+            thequery = _modifications_tmpl %(_insert_before_tmpl %('/db' + self.path \
+                + '/' + doc, select, value))
+        elif modification is 'insert-after':
+            thequery = _modifications_tmpl %(_insert_after_tmpl %('/db' + self.path \
+                + '/' + doc, select, value))
+        else:
+            thequery = _modifications_tmpl %(_update_tmpl %('/db' + self.path \
+                + '/' + doc, select, value))
+        
+        with self.lock:
+            self.conn.putrequest('POST', self.path + '/' + doc)
+            self._authenticate()
+            self.conn.putheader('Content-Type', 'text/xml')
+            self.conn.putheader('Content-Length', str(len(thequery)))
+            self.conn.endheaders()
+            self.conn.send(thequery)
+            
+            errcode, errmsg, headers = self.conn.getreply()
+            if errcode not in (200, 202):
+                raise ExistDB.Error('Error %d: %s' % (errcode, errmsg))
+
+            response = self.conn.getfile().read()
+            self.conn.close()
+        return response
 
     def _post(self, thequery, start = 1, max = None):
         args = ''
